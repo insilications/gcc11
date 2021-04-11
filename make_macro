@@ -1,1 +1,1 @@
-make -j12 profiledbootstrap
+V=1 VERBOSE=1 make -j12 profiledbootstrap

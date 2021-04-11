@@ -15,10 +15,9 @@ gcc-dev
 gdb-dev
 git
 glibc-dev
-glibc-dev32
-glibc-libc32
 glibc-staticdev
 gmp-dev
+gmp-staticdev
 graphviz
 guile
 libedit

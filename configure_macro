@@ -37,4 +37,5 @@
 --includedir=/usr/include \
 --exec-prefix=/usr \
 --with-system-zlib \
+--with-gmp \
 --with-build-config=bootstrap-lto

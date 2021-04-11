@@ -8,13 +8,13 @@ Version  : 11.0
 Release  : 1
 URL      : file:///insilications/apps/gcc-11.0.tar.gz
 Source0  : file:///insilications/apps/gcc-11.0.tar.gz
-Source1  : file:///insilications/apps/isl.tar.gz
 Summary  : zlib compression library
 Group    : Development/Tools
 License  : GPL-2.0 GPL-3.0 LGPL-2.1 bzip2-1.0.6
 BuildRequires : Sphinx
 BuildRequires : Z3-dev
 BuildRequires : Z3-staticdev
+BuildRequires : autoconf
 BuildRequires : autogen
 BuildRequires : binutils-dev
 BuildRequires : binutils-extras
@@ -30,13 +30,14 @@ BuildRequires : expect
 BuildRequires : flex
 BuildRequires : gcc-dev
 BuildRequires : gdb-dev
+BuildRequires : gettext
 BuildRequires : git
 BuildRequires : glibc-dev
-BuildRequires : glibc-dev32
-BuildRequires : glibc-libc32
 BuildRequires : glibc-staticdev
 BuildRequires : gmp-dev
+BuildRequires : gmp-staticdev
 BuildRequires : graphviz
+BuildRequires : grep
 BuildRequires : guile
 BuildRequires : libedit
 BuildRequires : libedit-dev
@@ -70,16 +71,6 @@ BuildRequires : zlib-staticdev
 # Suppress stripping binaries
 %define __strip /bin/true
 %define debug_package %{nil}
-Patch1: 0001-Always-use-z-now-when-linking-with-pie.patch
-Patch2: 0001-Ignore-Werror-if-GCC_IGNORE_WERROR-environment-varia.patch
-Patch3: arch-native-override.patch
-Patch4: fortran-vector-v2.patch
-Patch5: gomp-relax.patch
-Patch6: ipa-cp.patch
-Patch7: openmp-vectorize-v2.patch
-Patch8: optimize-at-least-some.patch
-Patch9: optimize.patch
-Patch10: tune-inline.patch
 
 %description
 This directory contains the GNU Compiler Collection (GCC).
@@ -89,22 +80,8 @@ some of the runtime libraries, are under different terms; see the
 individual source files for details.
 
 %prep
-%setup -q -n gcc
-cd %{_builddir}
-tar xf %{_sourcedir}/isl.tar.gz
-cd %{_builddir}/gcc
-mkdir -p isl
-cp -r %{_builddir}/isl/* %{_builddir}/gcc/isl
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch9 -p1
-%patch10 -p1
+%setup -q -n gcc-11.0
+cd %{_builddir}/gcc-11.0
 
 %build
 unset http_proxy
@@ -112,43 +89,30 @@ unset https_proxy
 unset no_proxy
 export SSL_CERT_FILE=/var/cache/ca-certs/anchors/ca-certificates.crt
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1618133244
+export SOURCE_DATE_EPOCH=1618139491
 unset LD_AS_NEEDED
 export GCC_IGNORE_WERROR=1
 ## altflags1 content
 %global _lto_cflags %{nil}
-unset CCACHE_DISABLE
+export CCACHE_DISABLE=true
 export PATH="/usr/lib64/ccache/bin:$PATH"
 export CCACHE_NOHASHDIR=true
 export CCACHE_CPP2=true
 export CCACHE_SLOPPINESS=pch_defines,time_macros,locale,clang_index_store,file_macroexport CCACHE_DIR=/var/tmp/ccache
 export CCACHE_BASEDIR=/builddir/build/BUILD
 #
-export CPATH=/usr/include
-export LIBRARY_PATH=/usr/lib64
-#
 export V=1
 export VERBOSE=1
 #
-export CFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fgraphite-identity -Wall -Wl,--build-id=sha1 -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+unset ASFLAGS
+unset LDFLAGS
+unset CFLAGS
+unset CXXFLAGS
+unset FCFLAGS
+unset FFLAGS
 #
-export CXXFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fgraphite-identity -Wall -Wl,--build-id=sha1 -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
-#
-export FFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fgraphite-identity -Wall -Wl,--build-id=sha1 -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
-#
-export LDFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fgraphite-identity -Wall -Wl,--build-id=sha1 -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
-#
-export CFLAGS_FOR_TARGET="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fgraphite-identity -Wall -Wl,--build-id=sha1 -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
-#
-export CXXFLAGS_FOR_TARGET="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fgraphite-identity -Wall -Wl,--build-id=sha1 -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
-#
-export FFLAGS_FOR_TARGET="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fgraphite-identity -Wall -Wl,--build-id=sha1 -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
-#
-export LDFLAGS_FOR_TARGET="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fgraphite-identity -Wall -Wl,--build-id=sha1 -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
-#
-export AR=/usr/bin/gcc-ar
-export RANLIB=/usr/bin/gcc-ranlib
-export NM=/usr/bin/gcc-nm
+export CPATH=/usr/include
+export LIBRARY_PATH=/usr/lib64
 #
 ## altflags1 end
 ./configure --prefix=%{_prefix} \
@@ -158,7 +122,6 @@ export NM=/usr/bin/gcc-nm
 --libexecdir=/usr/lib64 \
 --with-system-zlib \
 --enable-shared \
---enable-static \
 --enable-gnu-indirect-function \
 --disable-vtable-verify \
 --enable-threads=posix \
@@ -170,16 +133,14 @@ export NM=/usr/bin/gcc-nm
 --disable-multilib \
 --enable-lto \
 --enable-linker-build-id \
---build=x86_64-generic-linux \
---target=x86_64-generic-linux \
 --enable-languages="c,c++" \
 --with-ppl=yes \
 --with-isl \
 --includedir=%{_includedir} \
 --exec-prefix=%{_prefix} \
---with-glibc-version=2.19 \
 --with-system-libunwind \
 --with-gnu-ld \
+--with-gmp \
 --with-tune=native \
 --with-arch=native \
 --enable-bootstrap \
@@ -188,18 +149,17 @@ export NM=/usr/bin/gcc-nm
 --with-gcc-major-version-only \
 --disable-default-pie \
 --disable-werror \
---includedir=/usr/include \
---exec-prefix=/usr \
---with-system-zlib \
---with-build-config=bootstrap-lto
-make -j12 profiledbootstrap
+--includedir=%{_includedir} \
+--exec-prefix=%{_prefix} \
+--with-system-zlib
+V=1 VERBOSE=1 make -j12 profiledbootstrap
 ## ccache stats
 ccache -s
 ## ccache stats
 
 
 %install
-export SOURCE_DATE_EPOCH=1618133244
+export SOURCE_DATE_EPOCH=1618139491
 rm -rf %{buildroot}
 %make_install
 ## install_append content
