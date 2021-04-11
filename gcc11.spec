@@ -45,6 +45,7 @@ BuildRequires : libffi-dev
 BuildRequires : libffi-staticdev
 BuildRequires : libstdc++
 BuildRequires : libstdc++-dev
+BuildRequires : libunwind
 BuildRequires : libunwind-dev
 BuildRequires : libxml2-dev
 BuildRequires : libxml2-staticdev
@@ -71,6 +72,11 @@ BuildRequires : zlib-staticdev
 # Suppress stripping binaries
 %define __strip /bin/true
 %define debug_package %{nil}
+Patch1: fortran-vector-v2.patch
+Patch2: gomp-relax.patch
+Patch3: openmp-vectorize-v2.patch
+Patch4: optimize.patch
+Patch5: tune-inline.patch
 
 %description
 This directory contains the GNU Compiler Collection (GCC).
@@ -82,6 +88,11 @@ individual source files for details.
 %prep
 %setup -q -n gcc-11.0
 cd %{_builddir}/gcc-11.0
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
+%patch4 -p1
+%patch5 -p1
 
 %build
 unset http_proxy
@@ -89,30 +100,52 @@ unset https_proxy
 unset no_proxy
 export SSL_CERT_FILE=/var/cache/ca-certs/anchors/ca-certificates.crt
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1618139491
+export SOURCE_DATE_EPOCH=1618143368
 unset LD_AS_NEEDED
 export GCC_IGNORE_WERROR=1
 ## altflags1 content
 %global _lto_cflags %{nil}
-export CCACHE_DISABLE=true
+unset CCACHE_DISABLE
 export PATH="/usr/lib64/ccache/bin:$PATH"
 export CCACHE_NOHASHDIR=true
 export CCACHE_CPP2=true
-export CCACHE_SLOPPINESS=pch_defines,time_macros,locale,clang_index_store,file_macroexport CCACHE_DIR=/var/tmp/ccache
+export CCACHE_SLOPPINESS=pch_defines,time_macros,locale,clang_index_store,file_macroexport
+export CCACHE_DIR=/var/tmp/ccache
 export CCACHE_BASEDIR=/builddir/build/BUILD
 #
 export V=1
 export VERBOSE=1
 #
-unset ASFLAGS
-unset LDFLAGS
-unset CFLAGS
-unset CXXFLAGS
-unset FCFLAGS
-unset FFLAGS
+export CFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+#
+export CXXFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+#
+export FFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+#
+export LDFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+#
+export CFLAGS_FOR_TARGET="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+#
+export CXXFLAGS_FOR_TARGET="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+#
+export FFLAGS_FOR_TARGET="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+#
+export LDFLAGS_FOR_TARGET="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+#
+export BOOT_CFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+#
+export BOOT_CXXFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+#
+export BOOT_FFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
+#
+export BOOT_LDFLAGS="-O3 --param=lto-max-streaming-parallelism=4 -march=native -mtune=native -fomit-frame-pointer -fgraphite-identity -Wall -Wl,--enable-new-dtags -Wl,-O2 -Wl,-z,now -Wl,-z,relro -falign-functions=32 -flimit-function-alignment -fasynchronous-unwind-tables -fdevirtualize-at-ltrans -floop-nest-optimize -fno-semantic-interposition -fno-stack-protector -ftree-loop-distribute-patterns -ftree-loop-vectorize -ftree-vectorize -funroll-loops -fuse-ld=bfd -fuse-linker-plugin -ffat-lto-objects -malign-data=cacheline -Wl,-sort-common -Wno-error -pipe -Wl,-z,max-page-size=0x1000"
 #
 export CPATH=/usr/include
 export LIBRARY_PATH=/usr/lib64
+#
+export AR=/usr/bin/gcc-ar
+export RANLIB=/usr/bin/gcc-ranlib
+export NM=/usr/bin/gcc-nm
 #
 ## altflags1 end
 ./configure --prefix=%{_prefix} \
@@ -133,14 +166,16 @@ export LIBRARY_PATH=/usr/lib64
 --disable-multilib \
 --enable-lto \
 --enable-linker-build-id \
+--build=x86_64-generic-linux \
+--target=x86_64-generic-linux \
 --enable-languages="c,c++" \
 --with-ppl=yes \
 --with-isl \
 --includedir=%{_includedir} \
 --exec-prefix=%{_prefix} \
+--with-glibc-version=2.19 \
 --with-system-libunwind \
 --with-gnu-ld \
---with-gmp \
 --with-tune=native \
 --with-arch=native \
 --enable-bootstrap \
@@ -149,17 +184,19 @@ export LIBRARY_PATH=/usr/lib64
 --with-gcc-major-version-only \
 --disable-default-pie \
 --disable-werror \
---includedir=%{_includedir} \
---exec-prefix=%{_prefix} \
---with-system-zlib
-V=1 VERBOSE=1 make -j12 profiledbootstrap
+--includedir=/usr/include \
+--exec-prefix=/usr \
+--with-system-zlib \
+--with-gmp \
+--with-build-config=bootstrap-lto
+make -j12 V=1 VERBOSE=1 profiledbootstrap
 ## ccache stats
 ccache -s
 ## ccache stats
 
 
 %install
-export SOURCE_DATE_EPOCH=1618139491
+export SOURCE_DATE_EPOCH=1618143368
 rm -rf %{buildroot}
 %make_install
 ## install_append content
