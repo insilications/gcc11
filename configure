@@ -29,7 +29,7 @@
 --with-gnu-ld
 --with-tune=native
 --with-arch=native
---disable-bootstrap
+--enable-bootstrap
 --disable-cet
 --disable-libmpx
 --with-gcc-major-version-only
