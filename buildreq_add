@@ -26,6 +26,7 @@ libffi-dev
 libffi-staticdev
 libstdc++
 libstdc++-dev
+libunwind
 libunwind-dev
 libxml2-dev
 libxml2-staticdev
