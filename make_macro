@@ -1,1 +1,2 @@
-make -j12 profiledbootstrap
+exit 1
+#make -j12 profiledbootstrap
