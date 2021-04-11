@@ -112,7 +112,7 @@ unset https_proxy
 unset no_proxy
 export SSL_CERT_FILE=/var/cache/ca-certs/anchors/ca-certificates.crt
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1618132923
+export SOURCE_DATE_EPOCH=1618133244
 unset LD_AS_NEEDED
 export GCC_IGNORE_WERROR=1
 ## altflags1 content
@@ -190,15 +190,16 @@ export NM=/usr/bin/gcc-nm
 --disable-werror \
 --includedir=/usr/include \
 --exec-prefix=/usr \
---with-system-zlib
-exit 1
+--with-system-zlib \
+--with-build-config=bootstrap-lto
+make -j12 profiledbootstrap
 ## ccache stats
 ccache -s
 ## ccache stats
 
 
 %install
-export SOURCE_DATE_EPOCH=1618132923
+export SOURCE_DATE_EPOCH=1618133244
 rm -rf %{buildroot}
 %make_install
 ## install_append content

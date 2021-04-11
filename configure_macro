@@ -5,7 +5,6 @@
 --libexecdir=/usr/lib64 \
 --with-system-zlib \
 --enable-shared \
---enable-static \
 --enable-gnu-indirect-function \
 --disable-vtable-verify \
 --enable-threads=posix \
